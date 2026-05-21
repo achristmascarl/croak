@@ -1,4 +1,6 @@
-pub fn run(target: Vec<String>) -> anyhow::Result<()> {
+use crate::config::Config;
+
+pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
   if target.is_empty() {
     anyhow::bail!("No target command provided. Nothing to run.");
   }
