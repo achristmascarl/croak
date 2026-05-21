@@ -18,8 +18,11 @@ codegen-units = 1
 [dependencies]
 anyhow = "1.0.102"
 clap = { version = "4.6.1", features = ["cargo", "derive", "string"] }
+config = "0.15.23"
 dirs = "6.0.0"
 lazy_static = "1.5.0"
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "1.1.2"
 
 [build-dependencies]
 anyhow = "1.0.102"
