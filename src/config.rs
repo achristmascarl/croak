@@ -112,7 +112,10 @@ fn default_config_contents() -> &'static str {
 
 fn ensure_config_file(path: &Path) -> anyhow::Result<()> {
   if path.exists() {
-    return Ok(());
+    let contents = fs::read_to_string(path)?;
+    if !contents.trim().is_empty() {
+      return Ok(());
+    }
   }
 
   if let Some(parent) = path.parent() {
