@@ -11,6 +11,16 @@ pub fn info(message: &str) {
   write_log_to_file(&line);
 }
 
+pub fn warn(message: &str) {
+  let line = format!(
+    "[{}][WARN] {}",
+    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+    message
+  );
+  println!("[croak]{}", line);
+  write_log_to_file(&line);
+}
+
 pub fn error(message: &str) {
   let line = format!(
     "[{}][ERROR] {}",

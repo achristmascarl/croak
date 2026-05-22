@@ -5,6 +5,9 @@ use std::{
 };
 
 use serde::Deserialize;
+use uuid::Uuid;
+
+use crate::log;
 
 const CONFIG: &str = include_str!("../.config/config.toml");
 const CONFIG_FILE_CANDIDATES: [(&str, config::FileFormat); 5] = [
@@ -24,15 +27,24 @@ pub struct Folders {
   pub _config_dir: PathBuf,
 }
 
+#[derive(Clone, Debug, Deserialize, Default)]
+pub struct Settings {
+  pub fallback_smtp_username: Option<String>,
+  pub fallback_smtp_hostname: Option<String>,
+  pub fallback_recipient_email: Option<String>,
+}
+
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Config {
   #[serde(default, flatten)]
   pub folders: Folders,
+  #[serde(default)]
+  pub settings: Settings,
 }
 
 impl Config {
-  pub fn new() -> Result<Self, config::ConfigError> {
-    let default_config: Config = toml::from_str(CONFIG).unwrap();
+  pub fn new() -> anyhow::Result<Self> {
+    let _default_config: Config = toml::from_str(CONFIG).unwrap();
     let data_dir = crate::utils::get_data_dir();
     let config_dir = crate::utils::get_config_dir();
     let mut builder = config::Config::builder()
@@ -51,10 +63,20 @@ impl Config {
       }
     }
     if !found_config {
-      eprintln!("No configuration file found. Program may not behave as expected");
+      log::warn("No configuration file found. Program may not behave as expected");
     }
 
     let mut cfg: Self = builder.build()?.try_deserialize()?;
+    if let Some(ref username) = cfg.settings.fallback_smtp_username
+      && username.trim().is_empty()
+    {
+      cfg.settings.fallback_smtp_username = None;
+    }
+    if let Some(ref hostname) = cfg.settings.fallback_smtp_hostname
+      && hostname.trim().is_empty()
+    {
+      cfg.settings.fallback_smtp_hostname = None;
+    }
 
     Ok(cfg)
   }
@@ -114,4 +136,19 @@ fn open_editor(path: &Path) -> anyhow::Result<()> {
     anyhow::bail!("Editor exited with status code {:?}", status.code());
   }
   Ok(())
+}
+
+pub fn ensure_default_fallback_smtp_username(path: &Path) -> anyhow::Result<String> {
+  if path.exists() {
+    let contents = fs::read_to_string(path)?;
+    let uuid = Uuid::parse_str(&contents)?;
+    return Ok(uuid.to_string());
+  }
+
+  if let Some(parent) = path.parent() {
+    fs::create_dir_all(parent)?;
+  }
+  let gen_default = Uuid::new_v4().to_string();
+  fs::write(path, &gen_default)?;
+  Ok(gen_default)
 }

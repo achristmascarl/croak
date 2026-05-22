@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use std::io::{self, Write};
 use std::path::PathBuf;
 
 const VERSION_MESSAGE: &str = concat!(
@@ -71,4 +72,12 @@ Authors: {author}
 Config directory: {config_dir_path}
 Data directory: {data_dir_path}"
   )
+}
+
+pub fn prompt_for_input(prompt: &str) -> anyhow::Result<String> {
+  let mut response = String::new();
+  print!("{prompt}");
+  io::stdout().flush()?;
+  io::stdin().read_line(&mut response)?;
+  Ok(response.trim().to_string())
 }
