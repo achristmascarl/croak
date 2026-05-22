@@ -22,6 +22,9 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
     "Command {} exited with status: {}",
     cmd_name, status
   ));
+  if transports.is_empty() {
+    log::error("No transports configured. No notifications will be sent.");
+  }
   for transport in transports {
     let title = format!("Command '{}' exited with status: {}", cmd_name, status);
     let body = format!(

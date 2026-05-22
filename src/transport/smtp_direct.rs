@@ -29,10 +29,6 @@ impl SmtpDirect {
 
 impl super::TransportService for SmtpDirect {
   fn send(&self, title: String, body: String) -> anyhow::Result<()> {
-    log::info(&format!(
-      "Attempting to send email directly to {} via SMTP",
-      self.recipient_email
-    ));
     let mxs = get_mx_records(self.recipient_email.as_str())?;
     if mxs.is_empty() {
       return Err(anyhow::anyhow!(
@@ -40,14 +36,6 @@ impl super::TransportService for SmtpDirect {
         self.recipient_email
       ));
     }
-    log::info(&format!(
-      "Found MX records for {}: {:?}",
-      self.recipient_email,
-      mxs
-        .iter()
-        .map(|mx| mx.exchange.to_string())
-        .collect::<Vec<_>>()
-    ));
     for mx in &mxs {
       let tls = TlsParameters::new(mx.exchange.clone().to_string())?;
       let mailer = SmtpTransport::builder_dangerous(mx.exchange.clone())
@@ -65,13 +53,9 @@ impl super::TransportService for SmtpDirect {
         .body(body.clone())?;
       let res = mailer.send(&m);
       if res.is_ok() {
-        log::info(&format!(
-          "Successfully sent email to {} via MX record {}",
-          self.recipient_email, mx.exchange
-        ));
         return Ok(());
       }
-      log::warn(&format!(
+      log::debug(&format!(
         "Failed to send email to {} via MX record {}: {:?}",
         self.recipient_email,
         mx.exchange,

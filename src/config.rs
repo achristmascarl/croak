@@ -29,6 +29,7 @@ pub struct Folders {
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct Settings {
+  pub dangerously_allow_fallback_smtp: bool,
   pub fallback_smtp_username: Option<String>,
   pub fallback_smtp_hostname: Option<String>,
   pub fallback_recipient_email: Option<String>,
@@ -76,6 +77,11 @@ impl Config {
       && hostname.trim().is_empty()
     {
       cfg.settings.fallback_smtp_hostname = None;
+    }
+    if let Some(ref recipient_email) = cfg.settings.fallback_recipient_email
+      && recipient_email.trim().is_empty()
+    {
+      cfg.settings.fallback_recipient_email = None;
     }
 
     Ok(cfg)
@@ -151,4 +157,29 @@ pub fn ensure_default_fallback_smtp_username(path: &Path) -> anyhow::Result<Stri
   let gen_default = Uuid::new_v4().to_string();
   fs::write(path, &gen_default)?;
   Ok(gen_default)
+}
+
+pub fn read_default_fallback_recipient_email(path: &Path) -> anyhow::Result<Option<String>> {
+  if !path.exists() {
+    return Ok(None);
+  }
+
+  let recipient_email = fs::read_to_string(path)?.trim().to_string();
+  if recipient_email.is_empty() {
+    return Ok(None);
+  }
+
+  Ok(Some(recipient_email))
+}
+
+pub fn write_default_fallback_recipient_email(
+  path: &Path,
+  recipient_email: &str,
+) -> anyhow::Result<()> {
+  if let Some(parent) = path.parent() {
+    fs::create_dir_all(parent)?;
+  }
+
+  fs::write(path, recipient_email.trim())?;
+  Ok(())
 }

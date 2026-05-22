@@ -1,0 +1,2 @@
+[settings]
+dangerously_allow_fallback_smtp = false
