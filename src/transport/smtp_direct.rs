@@ -51,7 +51,7 @@ impl super::TransportService for SmtpDirect {
     for mx in &mxs {
       let tls = TlsParameters::new(mx.exchange.clone().to_string())?;
       let mailer = SmtpTransport::builder_dangerous(mx.exchange.clone())
-        .port(587)
+        .port(25)
         .tls(Tls::Opportunistic(tls))
         .build();
       let message_id = format!("<{}@{}>", Uuid::new_v4(), self.hostname);
