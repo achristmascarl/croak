@@ -5,9 +5,8 @@ use std::{
 };
 
 use serde::Deserialize;
-use uuid::Uuid;
 
-use crate::log;
+use crate::{log, transport::Transport};
 
 const CONFIG: &str = include_str!("../.config/config.toml");
 const CONFIG_FILE_CANDIDATES: [(&str, config::FileFormat); 5] = [
@@ -35,9 +34,11 @@ pub struct Settings {
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Config {
   #[serde(default, flatten)]
-  pub folders: Folders,
+  pub _folders: Folders,
   #[serde(default)]
   pub settings: Settings,
+  #[serde(default)]
+  pub transports: Vec<Transport>,
 }
 
 impl Config {
@@ -134,42 +135,35 @@ fn open_editor(path: &Path) -> anyhow::Result<()> {
   Ok(())
 }
 
-pub fn ensure_default_fallback_smtp_username(path: &Path) -> anyhow::Result<String> {
-  if path.exists() {
-    let contents = fs::read_to_string(path)?;
-    let uuid = Uuid::parse_str(&contents)?;
-    return Ok(uuid.to_string());
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::transport::TransportService;
+
+  #[test]
+  fn parses_tagged_transports() {
+    let cfg: Config = toml::from_str(
+      r#"
+        [[transports]]
+        type = "Http"
+        name = "notify"
+        method = "POST"
+        uri = "https://example.com/notify"
+        headers = { Authorization = "Bearer token" }
+        query_params = { source = "croak" }
+        json_body = true
+      "#,
+    )
+    .unwrap();
+
+    assert_eq!(cfg.transports.len(), 1);
+    assert_eq!(cfg.transports.get(0).unwrap().name(), "notify");
   }
 
-  if let Some(parent) = path.parent() {
-    fs::create_dir_all(parent)?;
+  #[test]
+  fn transports_default_to_empty() {
+    let cfg: Config = toml::from_str("").unwrap();
+
+    assert!(cfg.transports.is_empty());
   }
-  let gen_default = Uuid::new_v4().to_string();
-  fs::write(path, &gen_default)?;
-  Ok(gen_default)
-}
-
-pub fn read_default_fallback_recipient_email(path: &Path) -> anyhow::Result<Option<String>> {
-  if !path.exists() {
-    return Ok(None);
-  }
-
-  let recipient_email = fs::read_to_string(path)?.trim().to_string();
-  if recipient_email.is_empty() {
-    return Ok(None);
-  }
-
-  Ok(Some(recipient_email))
-}
-
-pub fn write_default_fallback_recipient_email(
-  path: &Path,
-  recipient_email: &str,
-) -> anyhow::Result<()> {
-  if let Some(parent) = path.parent() {
-    fs::create_dir_all(parent)?;
-  }
-
-  fs::write(path, recipient_email.trim())?;
-  Ok(())
 }

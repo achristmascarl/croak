@@ -14,29 +14,12 @@ pub enum Method {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Http {
+  name: String,
   method: Method,
   uri: String,
   headers: HashMap<String, String>,
   query_params: HashMap<String, String>,
   json_body: Option<bool>,
-}
-
-impl Http {
-  pub fn new(
-    method: Method,
-    uri: String,
-    headers: HashMap<String, String>,
-    query_params: HashMap<String, String>,
-    json_body: Option<bool>,
-  ) -> Self {
-    Http {
-      method,
-      uri,
-      headers,
-      query_params,
-      json_body,
-    }
-  }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -46,6 +29,10 @@ struct HttpJsonPayload {
 }
 
 impl TransportService for Http {
+  fn name(&self) -> &str {
+    &self.name
+  }
+
   fn send(&self, title: String, body: String) -> anyhow::Result<()> {
     let _ = retry_with_backoff(
       || {

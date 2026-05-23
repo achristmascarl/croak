@@ -1,14 +1,10 @@
-use crate::{
-  config::Config,
-  log,
-  transport::{self, TransportService},
-};
+use crate::{config::Config, log, transport::TransportService};
 
 pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
   if target.is_empty() {
     anyhow::bail!("No target command provided. Nothing to run.");
   }
-  let transports = transport::init_transports(cfg)?;
+  let transports = cfg.transports;
   if transports.is_empty() {
     anyhow::bail!("No transports configured. Notifications cannot be sent.");
   }
@@ -26,6 +22,7 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
     cmd_name, status
   ));
   for transport in transports {
+    let transport_name = transport.name().to_string();
     let title = format!("Command '{}' exited with status: {}", cmd_name, status);
     let body = format!(
       "The command '{}' was executed and exited with status: {}.",
@@ -33,8 +30,8 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
     );
     if let Err(e) = transport.send(title, body) {
       log::error(&format!(
-        "Failed to send notification via transport: {:?}",
-        e
+        "Failed to send notification via transport '{}': {:?}",
+        transport_name, e
       ));
     }
   }

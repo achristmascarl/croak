@@ -5,10 +5,10 @@ use http::Http;
 
 pub mod http;
 
-use crate::{config, utils::prompt_for_input};
-
 #[enum_dispatch]
 pub trait TransportService {
+  fn name(&self) -> &str;
+
   /// Send data to the destination. The implementor
   /// is responsible for defining the destination or offering
   /// a way to set it.
@@ -25,10 +25,4 @@ pub trait TransportService {
 #[serde(tag = "type")]
 pub enum Transport {
   Http,
-}
-
-pub fn init_transports(cfg: config::Config) -> anyhow::Result<Vec<Transport>> {
-  let mut transports: Vec<Transport> = Vec::new();
-
-  Ok(transports)
 }
