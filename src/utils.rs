@@ -84,13 +84,12 @@ pub fn prompt_for_input(prompt: &str) -> anyhow::Result<String> {
   Ok(response.trim().to_string())
 }
 
-pub fn retry_with_backoff<T, E, F>(
+pub fn retry_with_backoff<T, F>(
   mut f: F,
   max_retries: u32,
   base_backoff_ms: u64,
 ) -> anyhow::Result<T>
 where
-  E: std::fmt::Display,
   F: FnMut() -> anyhow::Result<T>,
 {
   for attempt in 0..=max_retries {

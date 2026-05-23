@@ -15,8 +15,19 @@ fn main() -> anyhow::Result<()> {
   if args.command == Some(cli::CliCommand::Edit) {
     return config::edit_config_file();
   }
-  let cfg = config::Config::new()?;
-  process::run(args.target_args, cfg)?;
+  let cfg_result = config::Config::new();
+  let Ok(cfg) = cfg_result else {
+    log::error(&format!(
+      "Failed to load configuration: {:?}",
+      cfg_result.as_ref().err()
+    ));
+    std::process::exit(1);
+  };
+  let run_result = process::run(args.target_args, cfg);
+  if let Err(e) = run_result {
+    log::error(&format!("Error running command: {:?}", e));
+    std::process::exit(1);
+  }
   Ok(())
 }
 

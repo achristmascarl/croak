@@ -9,6 +9,9 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
     anyhow::bail!("No target command provided. Nothing to run.");
   }
   let transports = transport::init_transports(cfg)?;
+  if transports.is_empty() {
+    anyhow::bail!("No transports configured. Notifications cannot be sent.");
+  }
   let mut cmd = std::process::Command::new(&target[0]);
   let cmd_name = cmd.get_program().to_string_lossy().to_string();
   for arg in &target[1..] {
@@ -22,9 +25,6 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
     "Command {} exited with status: {}",
     cmd_name, status
   ));
-  if transports.is_empty() {
-    log::error("No transports configured. No notifications will be sent.");
-  }
   for transport in transports {
     let title = format!("Command '{}' exited with status: {}", cmd_name, status);
     let body = format!(
