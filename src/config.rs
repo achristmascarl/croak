@@ -71,14 +71,19 @@ impl Config {
     }
 
     let mut cfg: Self = builder.build()?.try_deserialize()?;
-    if let Some(ref hostname) = cfg.settings.override_hostname
+    cfg.validate()?;
+    Ok(cfg)
+  }
+
+  fn validate(&mut self) -> anyhow::Result<()> {
+    if let Some(ref hostname) = self.settings.override_hostname
       && hostname.trim().is_empty()
     {
-      cfg.settings.override_hostname = None;
+      self.settings.override_hostname = None;
     }
 
     let mut transport_name_set: HashSet<String> = HashSet::new();
-    for transport in &cfg.transports {
+    for transport in &self.transports {
       let name = transport.name().to_string();
       if transport_name_set.contains(&name) {
         anyhow::bail!(
@@ -89,7 +94,7 @@ impl Config {
       transport_name_set.insert(name);
     }
 
-    Ok(cfg)
+    Ok(())
   }
 
   pub fn list_transports(&self) -> anyhow::Result<()> {
@@ -206,5 +211,33 @@ mod tests {
     let cfg: Config = toml::from_str("").unwrap();
 
     assert!(cfg.transports.is_empty());
+  }
+
+  #[test]
+  fn validates_config_after_loading() {
+    let mut cfg: Config = toml::from_str(
+      r#"
+        [settings]
+        override_hostname = "   "
+
+        [[transports]]
+        type = "Http"
+        name = "notify"
+        method = "POST"
+        uri = "https://example.com/notify"
+
+        [[transports]]
+        type = "Http"
+        name = "notify"
+        method = "PUT"
+        uri = "https://example.com/notify"
+      "#,
+    )
+    .unwrap();
+
+    let err = cfg.validate().unwrap_err();
+
+    assert!(cfg.settings.override_hostname.is_none());
+    assert!(err.to_string().contains("Duplicate transport name"));
   }
 }
