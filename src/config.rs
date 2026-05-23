@@ -91,6 +91,18 @@ impl Config {
 
     Ok(cfg)
   }
+
+  pub fn list_transports(&self) -> anyhow::Result<()> {
+    if self.transports.is_empty() {
+      println!("No transports configured.");
+    } else {
+      println!("Configured transports:");
+      for transport in &self.transports {
+        println!("- {}", transport);
+      }
+    }
+    Ok(())
+  }
 }
 
 pub fn edit_config_file() -> anyhow::Result<()> {

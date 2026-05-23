@@ -19,6 +19,7 @@ pub enum CliCommand {
     #[arg(value_enum)]
     transport: TransportKind,
   },
+  List,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum TransportKind {

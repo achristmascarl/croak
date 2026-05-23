@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use ureq;
 
 use crate::{
-  config, log,
+  config,
   transport::{Transport, TransportService},
   utils::{self, retry_with_backoff},
 };
@@ -146,11 +146,8 @@ pub fn configure() -> anyhow::Result<()> {
     query_params,
     json_body: Some(json_body),
   });
-  let config_string = toml::to_string(&http_transport)?;
-  log::info(&format!(
-    "Adding the following HTTP transport to your config:\n{}",
-    config_string
-  ));
-  config::append_to_config_file(format!("[[transports]]\n{config_string}").as_str())?;
+  let config_string = format!("[[transports]]\n{}", toml::to_string(&http_transport)?);
+  config::append_to_config_file(config_string.as_str())?;
+  println!("HTTP transport configured successfully!");
   Ok(())
 }

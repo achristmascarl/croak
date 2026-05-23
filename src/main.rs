@@ -25,6 +25,9 @@ fn main() -> anyhow::Result<()> {
     ));
     std::process::exit(1);
   };
+  if args.command == Some(cli::CliCommand::List) {
+    return cfg.list_transports();
+  }
   let run_result = process::run(args.target_args, cfg);
   if let Err(e) = run_result {
     log::error(&format!("Error running command: {:?}", e));

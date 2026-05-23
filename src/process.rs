@@ -21,9 +21,16 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
     "Command {} exited with status: {}",
     cmd_name, status
   ));
+  let hostname = cfg
+    .settings
+    .override_hostname
+    .unwrap_or(hostname::get().map_or("croak".into(), |h| h.to_string_lossy().to_string()));
   for transport in transports {
     let transport_name = transport.name().to_string();
-    let title = format!("Command '{}' exited with status: {}", cmd_name, status);
+    let title = format!(
+      "[{}] Command '{}' exited with status: {}",
+      hostname, cmd_name, status
+    );
     let body = format!(
       "The command '{}' was executed and exited with status: {}.",
       cmd_name, status

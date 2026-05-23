@@ -1,5 +1,6 @@
 use enum_dispatch::enum_dispatch;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 use http::Http;
 
@@ -28,6 +29,14 @@ pub trait TransportService {
 #[serde(tag = "type")]
 pub enum Transport {
   Http,
+}
+
+impl fmt::Display for Transport {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      Transport::Http(http) => write!(f, "[HTTP] {}", http.name()),
+    }
+  }
 }
 
 pub fn configure_transport(transport_kind: TransportKind) -> anyhow::Result<()> {
