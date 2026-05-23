@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+use std::io::Write;
 use std::{
   fs,
   path::{Path, PathBuf},
@@ -6,7 +8,10 @@ use std::{
 
 use serde::Deserialize;
 
-use crate::{log, transport::Transport};
+use crate::{
+  log,
+  transport::{Transport, TransportService},
+};
 
 const CONFIG: &str = include_str!("../.config/config.toml");
 const CONFIG_FILE_CANDIDATES: [(&str, config::FileFormat); 5] = [
@@ -72,6 +77,18 @@ impl Config {
       cfg.settings.override_hostname = None;
     }
 
+    let mut transport_name_set: HashSet<String> = HashSet::new();
+    for transport in &cfg.transports {
+      let name = transport.name().to_string();
+      if transport_name_set.contains(&name) {
+        anyhow::bail!(
+          "Duplicate transport name found: '{}'. Each transport must have a unique name.",
+          name
+        );
+      }
+      transport_name_set.insert(name);
+    }
+
     Ok(cfg)
   }
 }
@@ -132,6 +149,18 @@ fn open_editor(path: &Path) -> anyhow::Result<()> {
   if !status.success() {
     anyhow::bail!("Editor exited with status code {:?}", status.code());
   }
+  Ok(())
+}
+
+pub fn append_to_config_file(contents: &str) -> anyhow::Result<()> {
+  let config_path = existing_config_path().unwrap_or_else(preferred_config_path);
+  ensure_config_file(&config_path)?;
+  let mut file = fs::OpenOptions::new().append(true).open(&config_path)?;
+
+  writeln!(file)?;
+  writeln!(file, "{contents}")?;
+  writeln!(file)?;
+
   Ok(())
 }
 

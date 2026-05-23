@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 use crate::utils::version;
 
@@ -12,7 +12,15 @@ pub struct Cli {
   pub target_args: Vec<String>,
 }
 
-#[derive(clap::Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(clap::Subcommand, Debug, Clone, PartialEq, Eq)]
 pub enum CliCommand {
   Edit,
+  Configure {
+    #[arg(value_enum)]
+    transport: TransportKind,
+  },
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum TransportKind {
+  Http,
 }

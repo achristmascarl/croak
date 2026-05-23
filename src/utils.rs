@@ -84,6 +84,24 @@ pub fn prompt_for_input(prompt: &str) -> anyhow::Result<String> {
   Ok(response.trim().to_string())
 }
 
+pub fn prompt_for_input_with_validation<F>(
+  prompt: &str,
+  validate: F,
+  retry_text: &str,
+) -> anyhow::Result<String>
+where
+  F: Fn(&str) -> bool,
+{
+  loop {
+    let input = prompt_for_input(prompt)?;
+    if validate(&input) {
+      return Ok(input);
+    } else {
+      println!("{}", retry_text);
+    }
+  }
+}
+
 pub fn retry_with_backoff<T, F>(
   mut f: F,
   max_retries: u32,

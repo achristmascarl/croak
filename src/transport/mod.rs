@@ -3,10 +3,13 @@ use serde::{Deserialize, Serialize};
 
 use http::Http;
 
+use crate::cli::TransportKind;
+
 pub mod http;
 
 #[enum_dispatch]
 pub trait TransportService {
+  /// Get the name of the transport.
   fn name(&self) -> &str;
 
   /// Send data to the destination. The implementor
@@ -21,8 +24,15 @@ pub trait TransportService {
 /// if you want to send data to two different email addresses, you
 /// should have two Transports, one for each email address.
 #[enum_dispatch(TransportService)]
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(tag = "type")]
 pub enum Transport {
   Http,
+}
+
+pub fn configure_transport(transport_kind: TransportKind) -> anyhow::Result<()> {
+  match transport_kind {
+    TransportKind::Http => http::configure()?,
+  };
+  Ok(())
 }
