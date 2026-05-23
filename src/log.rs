@@ -1,10 +1,12 @@
 use crate::utils;
 use std::io::Write;
 
+const DEFAULT_DATE_FMT: &str = "%Y-%m-%d %H:%M:%S";
+
 pub fn info(message: &str) {
   let line = format!(
     "[{}][INFO] {}",
-    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+    chrono::Utc::now().format(DEFAULT_DATE_FMT),
     message
   );
   println!("[croak]{}", line);
@@ -14,7 +16,7 @@ pub fn info(message: &str) {
 pub fn warn(message: &str) {
   let line = format!(
     "[{}][WARN] {}",
-    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+    chrono::Utc::now().format(DEFAULT_DATE_FMT),
     message
   );
   println!("[croak]{}", line);
@@ -24,7 +26,7 @@ pub fn warn(message: &str) {
 pub fn error(message: &str) {
   let line = format!(
     "[{}][ERROR] {}",
-    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+    chrono::Utc::now().format(DEFAULT_DATE_FMT),
     message
   );
   eprintln!("[croak]{}", line);
@@ -34,7 +36,7 @@ pub fn error(message: &str) {
 pub fn debug(message: &str) {
   let line = format!(
     "[{}][DEBUG] {}",
-    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+    chrono::Utc::now().format(DEFAULT_DATE_FMT),
     message
   );
   write_log_to_file(&line);
@@ -46,7 +48,7 @@ fn write_log_to_file(line: &str) {
       if let Err(e) = writeln!(file, "{}", line) {
         eprintln!(
           "[croak][{}][ERROR] Failed to write to log file: {}",
-          chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+          chrono::Utc::now().to_rfc3339(),
           e
         );
       }
@@ -54,10 +56,9 @@ fn write_log_to_file(line: &str) {
     Err(e) => {
       eprintln!(
         "[croak][{}][ERROR] Failed to open log file for writing: {}",
-        chrono::Utc::now().format("%Y-%m-%d %H:%M:%S"),
+        chrono::Utc::now().to_rfc3339(),
         e
       );
-      eprintln!();
     },
   }
 }
