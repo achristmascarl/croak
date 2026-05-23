@@ -1,6 +1,8 @@
 use lazy_static::lazy_static;
 use std::io::{self, Write};
 use std::path::PathBuf;
+use std::thread;
+use std::time::Duration;
 
 const VERSION_MESSAGE: &str = concat!(
   env!("CARGO_PKG_VERSION"),
@@ -80,4 +82,23 @@ pub fn prompt_for_input(prompt: &str) -> anyhow::Result<String> {
   io::stdout().flush()?;
   io::stdin().read_line(&mut response)?;
   Ok(response.trim().to_string())
+}
+
+pub fn retry_with_backoff<T, E, F>(
+  mut f: F,
+  max_retries: u32,
+  base_backoff_ms: u64,
+) -> anyhow::Result<T>
+where
+  E: std::fmt::Display,
+  F: FnMut() -> anyhow::Result<T>,
+{
+  for attempt in 0..=max_retries {
+    match f() {
+      Ok(value) => return Ok(value),
+      Err(err) if attempt == max_retries => return Err(anyhow::anyhow!(err.to_string())),
+      Err(_) => thread::sleep(Duration::from_millis(base_backoff_ms * 2_u64.pow(attempt))),
+    }
+  }
+  unreachable!("retry loop always returns")
 }

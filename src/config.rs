@@ -29,10 +29,7 @@ pub struct Folders {
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct Settings {
-  pub dangerously_allow_fallback_smtp: bool,
-  pub fallback_smtp_username: Option<String>,
-  pub fallback_smtp_hostname: Option<String>,
-  pub fallback_recipient_email: Option<String>,
+  pub override_hostname: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -68,20 +65,10 @@ impl Config {
     }
 
     let mut cfg: Self = builder.build()?.try_deserialize()?;
-    if let Some(ref username) = cfg.settings.fallback_smtp_username
-      && username.trim().is_empty()
-    {
-      cfg.settings.fallback_smtp_username = None;
-    }
-    if let Some(ref hostname) = cfg.settings.fallback_smtp_hostname
+    if let Some(ref hostname) = cfg.settings.override_hostname
       && hostname.trim().is_empty()
     {
-      cfg.settings.fallback_smtp_hostname = None;
-    }
-    if let Some(ref recipient_email) = cfg.settings.fallback_recipient_email
-      && recipient_email.trim().is_empty()
-    {
-      cfg.settings.fallback_recipient_email = None;
+      cfg.settings.override_hostname = None;
     }
 
     Ok(cfg)

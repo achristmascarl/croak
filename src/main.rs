@@ -4,7 +4,6 @@ use crate::cli::Cli;
 
 mod cli;
 mod config;
-mod email;
 mod log;
 mod process;
 mod transport;
