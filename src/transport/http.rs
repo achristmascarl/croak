@@ -1,13 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use serde::{Deserialize, Serialize};
-use ureq;
+use ureq::{self, http::StatusCode};
 
 use crate::{
   config,
   transport::{Transport, TransportService},
   utils::{self, retry_with_backoff},
 };
+
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum Method {
@@ -40,10 +42,14 @@ impl TransportService for Http {
   fn send(&self, title: String, body: String) -> anyhow::Result<()> {
     let _ = retry_with_backoff(
       || {
+        let agent: ureq::Agent = ureq::Agent::config_builder()
+          .timeout_global(Some(REQUEST_TIMEOUT))
+          .build()
+          .into();
         let mut request = match self.method {
-          Method::POST => ureq::post(&self.uri),
-          Method::PUT => ureq::put(&self.uri),
-          Method::PATCH => ureq::patch(&self.uri),
+          Method::POST => agent.post(&self.uri),
+          Method::PUT => agent.put(&self.uri),
+          Method::PATCH => agent.patch(&self.uri),
         };
         if let Some(query_params) = &self.query_params {
           for (key, value) in query_params {
@@ -55,16 +61,20 @@ impl TransportService for Http {
             request = request.header(key.clone(), value.clone());
           }
         }
-        if self.json_body.unwrap_or(false) {
+        let response = if self.json_body.unwrap_or(false) {
           let payload = HttpJsonPayload {
             title: title.clone(),
             body: body.clone(),
           };
-          Ok(request.send_json(&payload)?.body_mut().read_to_string())
+          request.send_json(&payload)?
         } else {
           let payload = format!("{}\n{}\n\n{}", title, title.len().min(100), body);
-          Ok(request.send(payload)?.body_mut().read_to_string())
+          request.send(payload)?
+        };
+        if response.status() != StatusCode::OK {
+          anyhow::bail!("Received non-success status code: {}", response.status());
         }
+        Ok(response.status())
       },
       3,
       100,
