@@ -106,11 +106,11 @@ pub fn configure() -> anyhow::Result<()> {
     "PATCH" => Method::PATCH,
     _ => anyhow::bail!("Invalid HTTP method: {}", method_str),
   };
-  let json_body_str = utils::prompt_for_input("Should the body be sent as JSON? [Yes/no] (no): ")?;
+  let json_body_str = utils::prompt_for_input("Should the body be sent as JSON? [yes/no] (no): ")?;
   let json_body = matches!(json_body_str.to_lowercase().trim(), "yes" | "y");
   let mut headers: Option<HashMap<String, String>> = None;
   let should_add_headers_str =
-    utils::prompt_for_input("Do you want to add custom headers? [Yes/no] (no): ")?;
+    utils::prompt_for_input("Do you want to add custom headers? [yes/no] (no): ")?;
   let should_add_headers = matches!(should_add_headers_str.to_lowercase().trim(), "yes" | "y");
   if should_add_headers {
     let mut added_headers = HashMap::new();
@@ -131,7 +131,7 @@ pub fn configure() -> anyhow::Result<()> {
   }
   let mut query_params: Option<HashMap<String, String>> = None;
   let should_add_query_params_str =
-    utils::prompt_for_input("Do you want to add custom query parameters? [Yes/no] (no): ")?;
+    utils::prompt_for_input("Do you want to add custom query parameters? [yes/no] (no): ")?;
   let should_add_query_params = matches!(
     should_add_query_params_str.to_lowercase().trim(),
     "yes" | "y"
