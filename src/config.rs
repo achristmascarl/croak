@@ -51,7 +51,7 @@ pub struct Config {
 
 impl Config {
   pub fn new() -> anyhow::Result<Self> {
-    let _default_config: Config = toml::from_str(CONFIG).unwrap();
+    let default_config: Config = toml::from_str(CONFIG).unwrap();
     let data_dir = crate::utils::get_data_dir();
     let config_dir = crate::utils::get_config_dir();
     let mut builder = config::Config::builder()
@@ -75,6 +75,10 @@ impl Config {
 
     let mut cfg: Self = builder.build()?.try_deserialize()?;
     cfg.validate()?;
+    if cfg.settings.notify_on_start.is_none() {
+      cfg.settings.notify_on_start = default_config.settings.notify_on_start;
+    }
+
     Ok(cfg)
   }
 

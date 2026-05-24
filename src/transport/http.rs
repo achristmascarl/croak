@@ -68,12 +68,7 @@ impl TransportService for Http {
           };
           request.send_json(&payload)?
         } else {
-          let payload = format!(
-            "{}\n{}\n\n{}",
-            title,
-            "-".repeat(title.len().min(100)),
-            body
-          );
+          let payload = format!("{}\n{}\n\n{}", title, "-".repeat(title.len().min(50)), body);
           request.send(payload)?
         };
         if response.status() != StatusCode::OK {
