@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 use std::io::Write;
+#[cfg(unix)]
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::{
   fs,
   path::{Path, PathBuf},
@@ -143,7 +145,30 @@ fn ensure_config_file(path: &Path) -> anyhow::Result<()> {
   if let Some(parent) = path.parent() {
     fs::create_dir_all(parent)?;
   }
-  fs::write(path, default_config_contents())?;
+  write_default_config(path)?;
+  Ok(())
+}
+
+fn write_default_config(path: &Path) -> anyhow::Result<()> {
+  let mut options = fs::OpenOptions::new();
+  options.write(true).create(true).truncate(true);
+  #[cfg(unix)]
+  options.mode(0o600);
+
+  let mut file = options.open(path)?;
+  file.write_all(default_config_contents().as_bytes())?;
+  set_config_file_permissions(path)?;
+  Ok(())
+}
+
+#[cfg(unix)]
+fn set_config_file_permissions(path: &Path) -> anyhow::Result<()> {
+  fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
+  Ok(())
+}
+
+#[cfg(not(unix))]
+fn set_config_file_permissions(_path: &Path) -> anyhow::Result<()> {
   Ok(())
 }
 
@@ -185,6 +210,8 @@ pub fn append_to_config_file(contents: &str) -> anyhow::Result<()> {
 mod tests {
   use super::*;
   use crate::transport::TransportService;
+  #[cfg(unix)]
+  use std::os::unix::fs::PermissionsExt;
 
   #[test]
   fn parses_tagged_transports() {
@@ -239,5 +266,19 @@ mod tests {
 
     assert!(cfg.settings.override_hostname.is_none());
     assert!(err.to_string().contains("Duplicate transport name"));
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn creates_config_file_with_owner_only_permissions() {
+    let test_dir = std::env::temp_dir().join(format!("croak-config-test-{}", uuid::Uuid::new_v4()));
+    let config_path = test_dir.join("config.toml");
+
+    ensure_config_file(&config_path).unwrap();
+
+    let mode = fs::metadata(&config_path).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o600);
+
+    fs::remove_dir_all(test_dir).unwrap();
   }
 }
