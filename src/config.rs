@@ -35,6 +35,7 @@ pub struct Folders {
 
 #[derive(Clone, Debug, Deserialize, Default)]
 pub struct Settings {
+  pub notify_on_start: Option<bool>,
   pub override_hostname: Option<String>,
 }
 

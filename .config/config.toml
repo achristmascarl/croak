@@ -1,2 +1,6 @@
 [settings]
+# Sends a notification when the command starts. This is useful to ensure
+# that the notifications are working and configured correctly.
+notify_on_start = true
+# Uncomment to set the hostname is included in notifications
 # override_hostname = ""

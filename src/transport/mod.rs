@@ -4,7 +4,7 @@ use std::fmt;
 
 use http::Http;
 
-use crate::cli::TransportKind;
+use crate::{cli::TransportKind, log};
 
 pub mod http;
 
@@ -43,5 +43,20 @@ pub fn configure_transport(transport_kind: TransportKind) -> anyhow::Result<()> 
   match transport_kind {
     TransportKind::Http => http::configure()?,
   };
+  Ok(())
+}
+
+pub fn notify_first(transports: &[Transport], title: String, body: String) -> anyhow::Result<()> {
+  for transport in transports {
+    let transport_name = transport.name().to_string();
+    if let Err(e) = transport.send(title.clone(), body.clone()) {
+      log::error(&format!(
+        "Failed to send notification via transport '{}': {:?}",
+        transport_name, e
+      ));
+    } else {
+      break;
+    }
+  }
   Ok(())
 }

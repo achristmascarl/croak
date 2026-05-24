@@ -1,4 +1,4 @@
-use crate::{config::Config, log, transport::TransportService};
+use crate::{config::Config, log, transport};
 
 use std::{
   process::{Child, ExitStatus},
@@ -28,6 +28,15 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<ExitStatus> {
   }
   INTERRUPTED.store(false, Ordering::SeqCst);
   install_ctrlc_handler()?;
+  let hostname = cfg
+    .settings
+    .override_hostname
+    .unwrap_or(hostname::get().map_or("croak".into(), |h| h.to_string_lossy().to_string()));
+  if cfg.settings.notify_on_start.unwrap_or(false) {
+    let title = format!("[{}] Starting command: {}", hostname, cmd_name);
+    let body = format!("The command '{}' is starting execution.", cmd_name);
+    transport::notify_first(&transports, title, body)?;
+  }
   log::info(&format!("Running command: {}", cmd_name));
   let child = cmd
     .stdout(std::process::Stdio::inherit())
@@ -39,27 +48,15 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<ExitStatus> {
     "Command {} exited with status: {}",
     cmd_name, status
   ));
-  let hostname = cfg
-    .settings
-    .override_hostname
-    .unwrap_or(hostname::get().map_or("croak".into(), |h| h.to_string_lossy().to_string()));
-  for transport in transports {
-    let transport_name = transport.name().to_string();
-    let title = format!(
-      "[{}] Command '{}' exited with status: {}",
-      hostname, cmd_name, status
-    );
-    let body = format!(
-      "The command '{}' was executed and exited with status: {}.",
-      cmd_name, status
-    );
-    if let Err(e) = transport.send(title, body) {
-      log::error(&format!(
-        "Failed to send notification via transport '{}': {:?}",
-        transport_name, e
-      ));
-    }
-  }
+  let title = format!(
+    "[{}] Command '{}' exited with status: {}",
+    hostname, cmd_name, status
+  );
+  let body = format!(
+    "The command '{}' was executed and exited with status: {}.",
+    cmd_name, status
+  );
+  transport::notify_first(&transports, title, body)?;
   Ok(status)
 }
 
