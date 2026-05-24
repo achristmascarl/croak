@@ -46,7 +46,13 @@ pub fn configure_transport(transport_kind: TransportKind) -> anyhow::Result<()> 
   Ok(())
 }
 
-pub fn notify_first(transports: &[Transport], title: String, body: String) -> anyhow::Result<()> {
+pub fn notify_first(
+  transports: &[Transport],
+  title: String,
+  body: String,
+  bail_on_fail: bool,
+) -> anyhow::Result<()> {
+  let mut sent = false;
   for transport in transports {
     let transport_name = transport.name().to_string();
     if let Err(e) = transport.send(title.clone(), body.clone()) {
@@ -55,8 +61,15 @@ pub fn notify_first(transports: &[Transport], title: String, body: String) -> an
         transport_name, e
       ));
     } else {
+      sent = true;
       break;
     }
+  }
+  if !sent && bail_on_fail {
+    anyhow::bail!(
+      "Failed to send notification via all {} transports",
+      transports.len()
+    );
   }
   Ok(())
 }

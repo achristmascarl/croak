@@ -35,7 +35,7 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<ExitStatus> {
   if cfg.settings.notify_on_start.unwrap_or(false) {
     let title = format!("[{}] Starting command: {}", hostname, cmd_name);
     let body = format!("The command '{}' is starting execution.", cmd_name);
-    transport::notify_first(&transports, title, body)?;
+    transport::notify_first(&transports, title, body, true)?;
   }
   log::info(&format!("Running command: {}", cmd_name));
   let child = cmd
@@ -56,7 +56,7 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<ExitStatus> {
     "The command '{}' was executed and exited with status: {}.",
     cmd_name, status
   );
-  transport::notify_first(&transports, title, body)?;
+  transport::notify_first(&transports, title, body, false)?;
   Ok(status)
 }
 
