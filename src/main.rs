@@ -28,10 +28,15 @@ fn main() -> anyhow::Result<()> {
   if args.command == Some(cli::CliCommand::List) {
     return cfg.list_transports();
   }
-  let run_result = process::run(args.target_args, cfg);
-  if let Err(e) = run_result {
-    log::error(&format!("Error running command: {:?}", e));
-    std::process::exit(1);
+  let status = match process::run(args.target_args, cfg) {
+    Ok(status) => status,
+    Err(e) => {
+      log::error(&format!("Error running command: {:?}", e));
+      std::process::exit(1);
+    },
+  };
+  if !status.success() {
+    std::process::exit(status.code().unwrap_or(1));
   }
   Ok(())
 }

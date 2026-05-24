@@ -13,7 +13,7 @@ use std::{
 static INTERRUPTED: AtomicBool = AtomicBool::new(false);
 static CTRL_C_HANDLER_INSTALL: OnceLock<Result<(), String>> = OnceLock::new();
 
-pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
+pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<ExitStatus> {
   if target.is_empty() {
     anyhow::bail!("No target command provided. Nothing to run.");
   }
@@ -60,7 +60,7 @@ pub fn run(target: Vec<String>, cfg: Config) -> anyhow::Result<()> {
       ));
     }
   }
-  Ok(())
+  Ok(status)
 }
 
 fn install_ctrlc_handler() -> anyhow::Result<()> {
